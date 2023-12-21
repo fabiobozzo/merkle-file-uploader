@@ -1,5 +1,10 @@
 package merkle
 
+type ProofHash struct {
+	Hash     string
+	Position string
+}
+
 func (t *Tree) ProofForBlock(block string) (proof []ProofHash) {
 	blockHash := t.hashFn(block)
 

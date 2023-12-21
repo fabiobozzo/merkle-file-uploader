@@ -16,11 +16,6 @@ type Tree struct {
 	hashFn
 }
 
-type ProofHash struct {
-	Hash     string
-	Position string
-}
-
 func NewMerkleTree(blocks []string, hashFn hashFn) (tree *Tree, err error) {
 	tree = &Tree{hashFn: hashFn}
 

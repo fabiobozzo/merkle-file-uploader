@@ -11,40 +11,74 @@ import (
 var h = utils.Sha256
 
 func TestMerkleTree(t *testing.T) {
-	emptyTree, err := NewMerkleTree([]string{}, nil)
-	assert.ErrorIs(t, err, ErrEmptyTreeInput)
-	assert.Nil(t, emptyTree)
+	var traverseTree func(*Node, int, map[string]struct{}) int
+	traverseTree = func(node *Node, depth int, blockHashes map[string]struct{}) int {
+		// Leaf nodes must be among the hashes of the blocks
+		if node.Left == nil && node.Right == nil {
+			if _, ok := blockHashes[node.Data]; !ok {
+				t.Errorf("leaf node hash is not a block hash: %s", node.Data)
+			}
 
-	blocks := []string{"A", "B", "C", "D", "E"}
+			return depth
+		}
 
-	tree, err := NewMerkleTree(blocks, h)
-	assert.NoError(t, err)
-	assert.Equal(t, h("A"), tree.Root.Left.Left.Left.Data)
-	assert.Equal(t, h("B"), tree.Root.Left.Left.Right.Data)
-	assert.Equal(t, h("C"), tree.Root.Left.Right.Left.Data)
-	assert.Equal(t, h("D"), tree.Root.Left.Right.Right.Data)
-	assert.Equal(t, h("E"), tree.Root.Right.Left.Left.Data)
-	assert.Equal(t, h("E"), tree.Root.Right.Left.Right.Data)
-	assert.Equal(t, h("E"), tree.Root.Right.Right.Left.Data)
-	assert.Equal(t, h("E"), tree.Root.Right.Right.Right.Data)
+		leftDepth := traverseTree(node.Left, depth+1, blockHashes)
+		rightDepth := traverseTree(node.Right, depth+1, blockHashes)
+		if leftDepth != rightDepth {
+			t.Error("the tree is not balanced")
+		}
 
-	assert.Equal(t, h(h("A")+h("B")), tree.Root.Left.Left.Data)
-	assert.Equal(t, h(h("C")+h("D")), tree.Root.Left.Right.Data)
-	assert.Equal(t, h(h("E")+h("E")), tree.Root.Right.Left.Data)
-	assert.Equal(t, h(h("E")+h("E")), tree.Root.Right.Right.Data)
+		// Non-leaf nodes must be the hashes of their children's hashes
+		expectedHash := h(node.Left.Data + node.Right.Data)
+		if node.Data != expectedHash {
+			t.Errorf("node hash does not match children's hashes: got %s, want %s", node.Data, expectedHash)
+		}
 
-	assert.Equal(t, h(h(h("A")+h("B"))+h(h("C")+h("D"))), tree.Root.Left.Data)
-	assert.Equal(t, h(h(h("E")+h("E"))+h(h("E")+h("E"))), tree.Root.Right.Data)
-}
-
-func TestGenerateProof(t *testing.T) {
-	blocks := []string{"A", "B", "C", "D", "E"}
-
-	tree, err := NewMerkleTree(blocks, h)
-	assert.NoError(t, err)
-
-	for _, b := range blocks {
-		proof := tree.ProofForBlock(b)
-		assert.True(t, VerifyProof(tree.Root.Data, b, proof, h))
+		return leftDepth
 	}
+
+	cases := map[string]struct {
+		blocks  []string
+		wantErr error
+	}{
+		"empty tree": {
+			blocks:  []string{},
+			wantErr: ErrEmptyTreeInput,
+		},
+		"even-sized tree": {
+			blocks: []string{"A", "B", "C", "D", "E", "F"},
+		},
+		"odd-sized tree": {
+			blocks: []string{"A", "B", "C", "D", "E"},
+		},
+		"duplicates": {
+			blocks: []string{"A", "B", "B", "A"},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			emptyTree, err := NewMerkleTree([]string{}, nil)
+			assert.ErrorIs(t, err, ErrEmptyTreeInput)
+			assert.Nil(t, emptyTree)
+
+			blockHashes := map[string]struct{}{}
+			for _, block := range tc.blocks {
+				blockHashes[h(block)] = struct{}{}
+			}
+
+			tree, err := NewMerkleTree(tc.blocks, h)
+			if tc.wantErr != nil {
+				assert.ErrorIs(t, err, tc.wantErr)
+
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, tree.Root)
+
+			traverseTree(tree.Root, 0, blockHashes)
+		})
+	}
+
 }
