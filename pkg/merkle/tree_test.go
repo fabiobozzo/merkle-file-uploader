@@ -1,38 +1,50 @@
 package merkle
 
 import (
-	"crypto/sha256"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"merkle-file-uploader/pkg/utils"
 )
 
-func TestFind(t *testing.T) {
-	emptyTree, err := NewMerkleTree([][]byte{})
+var h = utils.Sha256
+
+func TestMerkleTree(t *testing.T) {
+	emptyTree, err := NewMerkleTree([]string{}, nil)
 	assert.ErrorIs(t, err, ErrEmptyTreeInput)
 	assert.Nil(t, emptyTree)
 
-	tree, err := NewMerkleTree([][]byte{
-		[]byte("A"),
-		[]byte("B"),
-		[]byte("C"),
-		[]byte("D"),
-		[]byte("E"),
-	})
+	blocks := []string{"A", "B", "C", "D", "E"}
+
+	tree, err := NewMerkleTree(blocks, h)
+	assert.NoError(t, err)
+	assert.Equal(t, h("A"), tree.Root.Left.Left.Left.Data)
+	assert.Equal(t, h("B"), tree.Root.Left.Left.Right.Data)
+	assert.Equal(t, h("C"), tree.Root.Left.Right.Left.Data)
+	assert.Equal(t, h("D"), tree.Root.Left.Right.Right.Data)
+	assert.Equal(t, h("E"), tree.Root.Right.Left.Left.Data)
+	assert.Equal(t, h("E"), tree.Root.Right.Left.Right.Data)
+	assert.Equal(t, h("E"), tree.Root.Right.Right.Left.Data)
+	assert.Equal(t, h("E"), tree.Root.Right.Right.Right.Data)
+
+	assert.Equal(t, h(h("A")+h("B")), tree.Root.Left.Left.Data)
+	assert.Equal(t, h(h("C")+h("D")), tree.Root.Left.Right.Data)
+	assert.Equal(t, h(h("E")+h("E")), tree.Root.Right.Left.Data)
+	assert.Equal(t, h(h("E")+h("E")), tree.Root.Right.Right.Data)
+
+	assert.Equal(t, h(h(h("A")+h("B"))+h(h("C")+h("D"))), tree.Root.Left.Data)
+	assert.Equal(t, h(h(h("E")+h("E"))+h(h("E")+h("E"))), tree.Root.Right.Data)
+}
+
+func TestGenerateProof(t *testing.T) {
+	blocks := []string{"A", "B", "C", "D", "E"}
+
+	tree, err := NewMerkleTree(blocks, h)
 	assert.NoError(t, err)
 
-	for _, block := range []string{"A", "B", "C", "D", "E"} {
-		hash := sha256.Sum256([]byte(block))
-		found, path, err := tree.Find(hash[:])
-		assert.NoError(t, err)
-		assert.Equal(t, hash[:], found.Data)
-		assert.True(t, len(path) >= 3)
-		assert.Equal(t, hash[:], path[len(path)-1].Data)
-		assert.Equal(t, tree.Root.Data, path[0].Data)
+	for _, b := range blocks {
+		proof := tree.ProofForBlock(b)
+		assert.True(t, VerifyProof(tree.Root.Data, b, proof, h))
 	}
-
-	nonExistentHash := sha256.Sum256([]byte("F"))
-	found, _, err := tree.Find(nonExistentHash[:])
-	assert.ErrorIs(t, err, ErrHashNotFound)
-	assert.Nil(t, found)
 }
