@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"merkle-file-uploader/pkg/utils"
+	"merkle-file-uploader/internal/utils"
 )
 
 var h = utils.Sha256

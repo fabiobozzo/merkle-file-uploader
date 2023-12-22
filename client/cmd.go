@@ -2,8 +2,13 @@ package client
 
 import (
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	defaultServerURL = "http://localhost:8080"
 )
 
 var Cmd = &cobra.Command{
@@ -19,4 +24,13 @@ var Cmd = &cobra.Command{
 func init() {
 	Cmd.AddCommand(uploadCmd)
 	Cmd.AddCommand(downloadCmd)
+}
+
+func getServerURL() (serverUrl string) {
+	serverUrl = os.Getenv("SERVER_URL")
+	if len(serverUrl) == 0 {
+		serverUrl = defaultServerURL
+	}
+
+	return
 }
