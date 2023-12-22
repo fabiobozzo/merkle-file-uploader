@@ -6,7 +6,7 @@ type ProofHash struct {
 }
 
 func (t *Tree) ProofForBlock(block string) (proof []ProofHash) {
-	blockHash := t.hashFn(block)
+	blockHash := t.HashFn(block)
 
 	var findProof func(node *Node) bool
 	findProof = func(node *Node) bool {
@@ -38,7 +38,7 @@ func (t *Tree) ProofForBlock(block string) (proof []ProofHash) {
 	return proof
 }
 
-func VerifyProof(rootHash string, block string, proof []ProofHash, hashFn hashFn) bool {
+func VerifyProof(rootHash string, block string, proof []ProofHash, hashFn HashFn) bool {
 	currentHash := hashFn(block)
 
 	for _, p := range proof {

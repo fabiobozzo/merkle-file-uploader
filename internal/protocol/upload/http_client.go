@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"merkle-file-uploader/internal/merkle"
 	"merkle-file-uploader/internal/protocol"
 )
 
@@ -19,18 +20,24 @@ var (
 )
 
 type HttpUploader struct {
-	Client  *http.Client
-	BaseURL string
+	client  *http.Client
+	baseURL string
+	hashFn  merkle.HashFn
 }
 
-func NewHttpUploader(httpClient *http.Client, baseURL string) *HttpUploader {
+func NewHttpUploader(httpClient *http.Client, baseURL string, hashFn merkle.HashFn) *HttpUploader {
 	return &HttpUploader{
-		Client:  httpClient,
-		BaseURL: baseURL,
+		client:  httpClient,
+		baseURL: baseURL,
+		hashFn:  hashFn,
 	}
 }
 
-func (h *HttpUploader) UploadFilesFrom(filePaths []string) (uploadedFiles []protocol.UploadedFile, err error) {
+func (h *HttpUploader) UploadFilesFrom(filePaths []string) (
+	uploadedFiles []protocol.UploadedFile,
+	merkleRoot string,
+	err error,
+) {
 	requestBody, formDataContentType, err := prepareRequestBody(filePaths)
 	if err != nil {
 		err = fmt.Errorf("%w: error preparing POST request body: %s", ErrFailedUpload, err)
@@ -38,7 +45,7 @@ func (h *HttpUploader) UploadFilesFrom(filePaths []string) (uploadedFiles []prot
 		return
 	}
 
-	response, err := http.Post(fmt.Sprintf("%s/upload", h.BaseURL), formDataContentType, &requestBody)
+	response, err := http.Post(fmt.Sprintf("%s/upload", h.baseURL), formDataContentType, &requestBody)
 	if err != nil {
 		err = fmt.Errorf("%w: error sending POST request: %s", ErrFailedUpload, err)
 
@@ -60,7 +67,36 @@ func (h *HttpUploader) UploadFilesFrom(filePaths []string) (uploadedFiles []prot
 
 	defer func() { _ = response.Body.Close() }()
 
-	return decodedResponse.UploadedFiles, nil
+	merkleRoot, err = h.computeMerkleRoot(filePaths)
+	if err != nil {
+		err = fmt.Errorf("%w: error computing merkle root: %s", ErrFailedUpload, err)
+
+		return
+	}
+
+	return decodedResponse.UploadedFiles, merkleRoot, nil
+}
+
+func (h *HttpUploader) computeMerkleRoot(filePaths []string) (merkleRoot string, err error) {
+	var fileHashes []string
+	for _, f := range filePaths {
+		var fileContent []byte
+		fileContent, err = os.ReadFile(f)
+		if err != nil {
+			err = fmt.Errorf("%w: error reading file for hashing: %s", ErrFailedUpload, err)
+
+			return
+		}
+
+		fileHashes = append(fileHashes, h.hashFn(string(fileContent)))
+	}
+
+	tree, err := merkle.NewMerkleTree(fileHashes, h.hashFn)
+	if err != nil {
+		return
+	}
+
+	return tree.Root.Data, nil
 }
 
 func prepareRequestBody(filePaths []string) (requestBody bytes.Buffer, formDataContentType string, err error) {

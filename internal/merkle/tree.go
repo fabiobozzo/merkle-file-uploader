@@ -8,16 +8,16 @@ var (
 	ErrEmptyTreeInput = errors.New("cannot build a merkle tree from empty data")
 )
 
-type hashFn func(string) string
+type HashFn func(string) string
 
 // Tree contains the root node of a merkle tree
 type Tree struct {
 	Root *Node
-	hashFn
+	HashFn
 }
 
-func NewMerkleTree(blocks []string, hashFn hashFn) (tree *Tree, err error) {
-	tree = &Tree{hashFn: hashFn}
+func NewMerkleTree(blocks []string, hashFn HashFn) (tree *Tree, err error) {
+	tree = &Tree{HashFn: hashFn}
 
 	if len(blocks) == 0 {
 		return nil, ErrEmptyTreeInput

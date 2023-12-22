@@ -15,7 +15,7 @@ import (
 )
 
 type Uploader interface {
-	UploadFilesFrom(filePaths []string) ([]protocol.UploadedFile, error)
+	UploadFilesFrom(filePaths []string) ([]protocol.UploadedFile, string, error)
 }
 
 var _ Uploader = (*upload.HttpUploader)(nil)
@@ -38,8 +38,8 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, getServerURL())
-		uploadedFiles, err := uploader.UploadFilesFrom(filePaths)
+		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, getServerURL(), utils.Sha256)
+		uploadedFiles, merkleRoot, err := uploader.UploadFilesFrom(filePaths)
 		if err != nil {
 			fmt.Println(err)
 
@@ -49,6 +49,14 @@ var uploadCmd = &cobra.Command{
 		for _, f := range uploadedFiles {
 			fmt.Printf("Uploaded file at index #%d: %s\n", f.Index, f.Name)
 		}
+
+		if err = os.WriteFile(getMerkleRootFilename(), []byte(merkleRoot), 0644); err != nil {
+			fmt.Printf("Failed to store merkle root: %s\n", err)
+
+			return
+		}
+
+		fmt.Println("Merkle Root hash:", merkleRoot)
 	},
 }
 

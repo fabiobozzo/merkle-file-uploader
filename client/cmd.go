@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	defaultServerURL = "http://localhost:8080"
+	defaultServerURL          = "http://localhost:8080"
+	defaultMerkleRootFilename = ".merkleroot"
 )
 
 var Cmd = &cobra.Command{
@@ -30,6 +31,15 @@ func getServerURL() (serverUrl string) {
 	serverUrl = os.Getenv("SERVER_URL")
 	if len(serverUrl) == 0 {
 		serverUrl = defaultServerURL
+	}
+
+	return
+}
+
+func getMerkleRootFilename() (merkleRootFilename string) {
+	merkleRootFilename = os.Getenv("MERKLE_ROOT_FILENAME")
+	if len(merkleRootFilename) == 0 {
+		merkleRootFilename = defaultMerkleRootFilename
 	}
 
 	return

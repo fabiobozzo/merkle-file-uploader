@@ -11,7 +11,7 @@ type Node struct {
 
 // NewNode takes two nodes as input, h their data together,
 // and returns a new node with the resulting h.
-func NewNode(left, right *Node, data string, hash hashFn) (n *Node) {
+func NewNode(left, right *Node, data string, hash HashFn) (n *Node) {
 	n = &Node{}
 
 	if left == nil && right == nil {
