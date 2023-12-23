@@ -78,7 +78,7 @@ func (h *HttpUploader) UploadFilesFrom(filePaths []string) (
 }
 
 func (h *HttpUploader) computeMerkleRoot(filePaths []string) (merkleRoot string, err error) {
-	var fileHashes []string
+	var blocks []string
 	for _, f := range filePaths {
 		var fileContent []byte
 		fileContent, err = os.ReadFile(f)
@@ -88,10 +88,10 @@ func (h *HttpUploader) computeMerkleRoot(filePaths []string) (merkleRoot string,
 			return
 		}
 
-		fileHashes = append(fileHashes, h.hashFn(string(fileContent)))
+		blocks = append(blocks, string(fileContent))
 	}
 
-	tree, err := merkle.NewMerkleTree(fileHashes, h.hashFn)
+	tree, err := merkle.NewTree(blocks, h.hashFn)
 	if err != nil {
 		return
 	}

@@ -16,7 +16,7 @@ type Tree struct {
 	HashFn
 }
 
-func NewMerkleTree(blocks []string, hashFn HashFn) (tree *Tree, err error) {
+func NewTree(blocks []string, hashFn HashFn) (tree *Tree, err error) {
 	tree = &Tree{HashFn: hashFn}
 
 	if len(blocks) == 0 {

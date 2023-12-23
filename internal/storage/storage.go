@@ -7,6 +7,7 @@ var (
 )
 
 type StoredFile struct {
+	Index   int
 	Name    string
 	Content []byte
 }

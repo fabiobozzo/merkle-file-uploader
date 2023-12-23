@@ -38,7 +38,7 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, getServerURL(), utils.Sha256)
+		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, getServerURL(), hashFn)
 		uploadedFiles, merkleRoot, err := uploader.UploadFilesFrom(filePaths)
 		if err != nil {
 			fmt.Println(err)

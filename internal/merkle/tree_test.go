@@ -58,7 +58,7 @@ func TestMerkleTree(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			emptyTree, err := NewMerkleTree([]string{}, nil)
+			emptyTree, err := NewTree([]string{}, nil)
 			assert.ErrorIs(t, err, ErrEmptyTreeInput)
 			assert.Nil(t, emptyTree)
 
@@ -67,7 +67,7 @@ func TestMerkleTree(t *testing.T) {
 				blockHashes[h(block)] = struct{}{}
 			}
 
-			tree, err := NewMerkleTree(tc.blocks, h)
+			tree, err := NewTree(tc.blocks, h)
 			if tc.wantErr != nil {
 				assert.ErrorIs(t, err, tc.wantErr)
 

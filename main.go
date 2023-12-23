@@ -13,8 +13,8 @@ import (
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "mfu",
-		Short: "MFU is a tool for verifiable file uploads and downloads",
-		Long: `A CLI for managing both MFU client and server,
+		Short: "mfu is a tool for verifiable file uploads and downloads",
+		Long: `A CLI for managing both mfu client and server,
 			and verifying downloaded files with the help of Merkle proofs.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cmd.Help(); err != nil {

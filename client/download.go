@@ -35,7 +35,19 @@ var downloadCmd = &cobra.Command{
 			return
 		}
 
-		downloader := download.NewHttpDownloader(&http.Client{Timeout: time.Second * 30}, getServerURL())
+		rootHash, err := os.ReadFile(getMerkleRootFilename())
+		if err != nil {
+			fmt.Println("Merkle Root hash is missing or unreadable:", err)
+
+			return
+		}
+
+		downloader := download.NewHttpDownloader(
+			&http.Client{Timeout: time.Second * 30},
+			getServerURL(),
+			string(rootHash),
+			hashFn,
+		)
 
 		if err := downloader.DownloadFileAt(index, os.Stdout); err != nil {
 			fmt.Println(err)

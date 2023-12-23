@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"merkle-file-uploader/internal/utils"
 )
 
 const (
@@ -12,9 +14,11 @@ const (
 	defaultMerkleRootFilename = ".merkleroot"
 )
 
+var hashFn = utils.Sha256
+
 var Cmd = &cobra.Command{
 	Use:   "client",
-	Short: "The MFU client can upload & download files and verify their integrity",
+	Short: "The mfu client can upload & download files and verify their integrity",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Help(); err != nil {
 			log.Fatal(err)

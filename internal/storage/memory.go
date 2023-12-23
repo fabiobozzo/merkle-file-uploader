@@ -13,6 +13,7 @@ func (s *InMemoryStorage) StoreFile(file StoredFile) (int, error) {
 	defer s.mu.Unlock()
 
 	s.seq++
+	file.Index = s.seq
 	s.files[s.seq] = file
 
 	return s.seq, nil
@@ -22,7 +23,7 @@ func (s *InMemoryStorage) RetrieveAllFiles() (storedFiles []StoredFile, err erro
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for i := 0; i < s.seq; i++ {
+	for i := 1; i <= s.seq; i++ {
 		storedFiles = append(storedFiles, s.files[i])
 	}
 

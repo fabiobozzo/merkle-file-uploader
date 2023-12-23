@@ -24,7 +24,7 @@ func TestMerkleProof(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			tree, err := NewMerkleTree(tc.blocks, h)
+			tree, err := NewTree(tc.blocks, h)
 			assert.NoError(t, err)
 
 			for _, b := range tc.blocks {
