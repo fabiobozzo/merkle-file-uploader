@@ -18,8 +18,9 @@ const (
 	defaultPort               = 8080
 	defaultAwsAccessKeyId     = "test"
 	defaultAwsSecretAccessKey = "test"
-	defaultAwsEndpoint        = "http://localstack:4566"
+	defaultAwsEndpoint        = "http://localhost:4566"
 	defaultS3BucketName       = "mfu-202312"
+	defaultMerkleTreeFilename = ".merkletree.gob"
 )
 
 var hashFn = utils.Sha256
@@ -34,6 +35,7 @@ var Cmd = &cobra.Command{
 			utils.EnvStr("AWS_SECRET_ACCESS_KEY", defaultAwsSecretAccessKey),
 			utils.EnvStr("AWS_ENDPOINT", defaultAwsEndpoint),
 			utils.EnvStr("AWS_S3_BUCKET_NAME", defaultS3BucketName),
+			defaultMerkleTreeFilename,
 		)
 		if err != nil {
 			log.Fatal("error while connecting to S3:", err)
@@ -42,7 +44,7 @@ var Cmd = &cobra.Command{
 		}
 
 		r := mux.NewRouter()
-		r.HandleFunc("/upload", upload.NewUploadHandler(repository))
+		r.HandleFunc("/upload", upload.NewUploadHandler(repository, hashFn))
 		r.HandleFunc("/download/{index}", download.NewDownloadHandler(repository))
 		r.HandleFunc("/proof/{index}", download.NewProofHandler(repository, hashFn))
 

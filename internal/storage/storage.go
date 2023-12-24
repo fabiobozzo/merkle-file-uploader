@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"errors"
+
+	"merkle-file-uploader/internal/merkle"
 )
 
 var (
@@ -16,8 +18,9 @@ type StoredFile struct {
 }
 
 type Repository interface {
-	StoreFile(ctx context.Context, file StoredFile) (int, error)
-	RetrieveAllFiles(ctx context.Context) ([]StoredFile, error)
-	RetrieveFileByIndex(ctx context.Context, i int) (StoredFile, error)
-	DeleteAllFiles(ctx context.Context) error
+	StoreFile(context.Context, StoredFile) (int, error)
+	RetrieveFileByIndex(context.Context, int) (StoredFile, error)
+	DeleteAllFiles(context.Context) error
+	StoreTree(context.Context, *merkle.Tree) error
+	RetrieveTree(context.Context) (*merkle.Tree, error)
 }

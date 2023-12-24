@@ -3,7 +3,6 @@ package download
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -63,37 +62,30 @@ func NewProofHandler(repository storage.Repository, hashFn merkle.HashFn) func(h
 			return
 		}
 
-		storedFiles, err := repository.RetrieveAllFiles(r.Context())
+		merkleTree, err := repository.RetrieveTree(r.Context())
 		if err != nil {
 			utils.HttpError(w, http.StatusInternalServerError, err)
 
 			return
 		}
+		merkleTree.HashFn = hashFn
 
-		var blocks []string
-		var blockToProve string
-		for _, f := range storedFiles {
-			fileContent := string(f.Content)
-			blocks = append(blocks, fileContent)
-			if f.Index == index {
-				blockToProve = fileContent
+		fileByIndex, err := repository.RetrieveFileByIndex(r.Context(), index)
+		if err != nil {
+			statusCode := http.StatusInternalServerError
+			if errors.Is(err, storage.ErrStoredFileNotFound) {
+				statusCode = http.StatusNotFound
 			}
-		}
 
-		merkleTree, err := merkle.NewTree(blocks, hashFn)
-		if err != nil {
-			utils.HttpError(w, http.StatusInternalServerError, err)
+			utils.HttpError(w, statusCode, err)
 
 			return
 		}
 
-		merkleProof := merkleTree.ProofForBlock(blockToProve)
+		merkleProof := merkleTree.ProofForBlock(string(fileByIndex.Content))
 		if err = utils.HttpOkJson(w, protocol.MerkleProofResponse{MerkleProof: merkleProof}); err != nil {
 			utils.HttpError(w, http.StatusInternalServerError, err)
 		}
-
-		log.Println("merkle root:", merkleTree.Root.Data)
-		log.Println("merkle proof:", merkleProof)
 
 		return
 	}

@@ -12,16 +12,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+
+	"merkle-file-uploader/internal/merkle"
 )
 
 type S3Storage struct {
-	client *s3.Client
-	bucket string
+	client             *s3.Client
+	bucket             string
+	merkleTreeFileName string
 }
 
-func NewS3Storage(accessKeyId, secretAccessKey, endpoint, bucket string) (s3Storage *S3Storage, err error) {
+var _ Repository = (*S3Storage)(nil)
+
+func NewS3Storage(accessKeyId, secretAccessKey, endpoint, bucket, merkleTreeFileName string) (s3Storage *S3Storage, err error) {
 	s3Storage = &S3Storage{
-		bucket: bucket,
+		bucket:             bucket,
+		merkleTreeFileName: merkleTreeFileName,
 	}
 
 	cfg, err := config.LoadDefaultConfig(
@@ -59,25 +65,6 @@ func (s *S3Storage) StoreFile(ctx context.Context, file StoredFile) (i int, err 
 		Key:    aws.String(fmt.Sprintf("%d", i)),
 		Body:   bytes.NewReader(file.Content),
 	})
-
-	return
-}
-
-func (s *S3Storage) RetrieveAllFiles(ctx context.Context) (storedFiles []StoredFile, err error) {
-	filesCount, err := s.countFiles(ctx)
-	if err != nil {
-		return
-	}
-
-	for i := 1; i <= filesCount; i++ {
-		var f StoredFile
-		f, err = s.RetrieveFileByIndex(ctx, i)
-		if err != nil {
-			return
-		}
-
-		storedFiles = append(storedFiles, f)
-	}
 
 	return
 }
@@ -139,6 +126,35 @@ func (s *S3Storage) countFiles(ctx context.Context) (count int, err error) {
 
 		count += len(page.Contents)
 	}
+
+	return
+}
+
+func (s *S3Storage) StoreTree(ctx context.Context, tree *merkle.Tree) (err error) {
+	treeBytes, err := tree.Serialize()
+	if err != nil {
+		return
+	}
+
+	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(s.merkleTreeFileName),
+		Body:   bytes.NewReader(treeBytes),
+	})
+
+	return
+}
+
+func (s *S3Storage) RetrieveTree(ctx context.Context) (tree *merkle.Tree, err error) {
+	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(s.merkleTreeFileName),
+	})
+	if err != nil {
+		return
+	}
+
+	tree, err = merkle.Deserialize(resp.Body)
 
 	return
 }

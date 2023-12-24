@@ -1,7 +1,10 @@
 package merkle
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
+	"io"
 )
 
 var (
@@ -54,6 +57,27 @@ func NewTree(blocks []string, hashFn HashFn) (tree *Tree, err error) {
 
 	// The last remaining node is the root of the tree
 	tree.Root = &nodes[0]
+
+	return
+}
+
+func (t *Tree) Serialize() (treeBytes []byte, err error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+
+	if err = encoder.Encode(*t); err != nil {
+		return
+	}
+
+	return buf.Bytes(), nil
+}
+
+func Deserialize(r io.Reader) (t *Tree, err error) {
+	var tree Tree
+	decoder := gob.NewDecoder(r)
+	err = decoder.Decode(&tree)
+
+	t = &tree
 
 	return
 }
