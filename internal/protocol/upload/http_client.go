@@ -1,18 +1,15 @@
 package upload
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"merkle-file-uploader/internal/merkle"
 	"merkle-file-uploader/internal/protocol"
+	"merkle-file-uploader/internal/utils"
 )
 
 var (
@@ -38,7 +35,7 @@ func (h *HttpUploader) UploadFilesFrom(filePaths []string) (
 	merkleRoot string,
 	err error,
 ) {
-	requestBody, formDataContentType, err := prepareRequestBody(filePaths)
+	requestBody, formDataContentType, err := utils.MultipartFormFromFiles(filePaths)
 	if err != nil {
 		err = fmt.Errorf("%w: error preparing POST request body: %s", ErrFailedUpload, err)
 
@@ -97,40 +94,4 @@ func (h *HttpUploader) computeMerkleRoot(filePaths []string) (merkleRoot string,
 	}
 
 	return tree.Root.Data, nil
-}
-
-func prepareRequestBody(filePaths []string) (requestBody bytes.Buffer, formDataContentType string, err error) {
-	multipartWriter := multipart.NewWriter(&requestBody)
-
-	for _, fp := range filePaths {
-		var file *os.File
-		file, err = os.Open(fp)
-		if err != nil {
-			return
-		}
-
-		var filePart io.Writer
-		filePart, err = multipartWriter.CreateFormFile("files", filepath.Base(fp))
-		if err != nil {
-			return
-		}
-
-		// copy the file content to the form file part
-		if _, err = io.Copy(filePart, file); err != nil {
-			return
-		}
-
-		if err = file.Close(); err != nil {
-			return
-		}
-	}
-
-	// Close the multipart writer to finish building the request body
-	if err = multipartWriter.Close(); err != nil {
-		return
-	}
-
-	formDataContentType = multipartWriter.FormDataContentType()
-
-	return
 }
