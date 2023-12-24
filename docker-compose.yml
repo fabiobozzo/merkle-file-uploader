@@ -11,6 +11,8 @@ services:
     volumes:
       - ./scripts/aws:/etc/localstack/init/ready.d
   server:
+    depends_on:
+      - localstack
     build: .
     ports:
       - "8080:8080"
