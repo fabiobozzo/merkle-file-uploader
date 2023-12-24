@@ -7,15 +7,16 @@ The client computes a single Merkle tree root hash for the set of files and pers
 The server stores the files and the Merkle tree, and provides an interface for uploading files, downloading files, and generating Merkle proofs.
 
 ## Implementation
-The project is implemented in Go and uses the standard library for networking, allowing it to be deployed across multiple machines. The Merkle tree is implemented from scratch, with the standard library's `crypto/sha256` package used for the underlying hash function.
+The project is implemented in Go and uses the standard library for networking, allowing it to be deployed across multiple machines. The Merkle tree is implemented from scratch, with the standard library's `crypto/sha256` package used for the underlying (default, but easily replaceable) hash function.
 
 The project is structured into three main components:
-- Client, which handles file uploading, downloading, and Merkle proof verification.
-- Server, which handles file storage, and Merkle proof generation.
-- MerkleTree, which provides methods for constructing the tree and generating proofs.
+- `cmd/client`: handles file uploading, downloading, and Merkle proof verification.
+- `cmd/server`: handles file storage, and Merkle proof generation.
+- `internal/merkle`: provides methods for constructing the tree and generating proofs.
 
 ## Usage
-The project is containerized using Docker and can be deployed using Docker Compose. To start the system, just run:
+The project is containerized using Docker and can be deployed using Docker Compose.  
+To bootstrap the demo, just run:
 ```
 make start-server
 ```
@@ -50,11 +51,11 @@ make stop-server
     - a more realistic, S3 bucket
 
 ## Limitations and future improvements
-⚠️ **Disclaimer** !  
-This project is a working Proof-of-Concept, for the sake of showing a remote Merkle Proof verification systems. There are several areas where it could be further developed and prepared to be production-ready:
+⚠️ **Disclaimer**  
+This project is a working Proof-of-Concept, for the sake of demonstrating how Merkle Proofs can be used to bring file integrity checks to a remote file storage. There are several areas where that could be further developed and prepared to be production-ready:
 
 1. **Coverage**: I wrote the (happy flow) unit tests for the Merkle tree and its proof generation and verification. That's the juicy part. For the sake of full coverage, though, the boilerplate testing of the http-based protocol (mocking `Storage`) and utility functions should be added, too. On top of that, comprehensive integration and performance tests. 
-2. **Workflow**: The client-server is single-shot. Only one batch of files is managed, at a time. It would be more useful to create separate batches upload, and reference them as separate entities. Further down the road, I'd like to explore how to add/remove to an existing set of files. 
+2. **Workflow**: The client-server is _single-shot_. Only one batch of files is managed, at a time. It would be more useful to create separate batches upload, and reference them as separate entities. Further down the road, I'd like to explore how to add/remove to an existing set of files. 
 3. **Server Storage**: The naming convention for uploaded files is based on their index, in a key-value manner. It would be better to organize the files in a better way (e.g. keeping the indexes in _Redis_ for fast lookups of files' location along with other metadata, such as original names, and so on).
 4. **Synchronization and Concurrency**: The server does not currently handle concurrent requests, which could lead to inconsistencies in the Merkle tree. A future improvement could be to add locking or use a concurrent data structure for the Merkle tree, or even relying on transactions. 
 5. **Performance**: I consider the time/space complexity of the Merkle proof generation good enough for this use case, although it would be interesting to increase the algorithm and space complexity a bit, and try to speed it up by concurrently searching the left and right subtrees in parallel. 
