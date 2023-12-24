@@ -2,7 +2,6 @@ package client
 
 import (
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -29,22 +28,4 @@ var Cmd = &cobra.Command{
 func init() {
 	Cmd.AddCommand(uploadCmd)
 	Cmd.AddCommand(downloadCmd)
-}
-
-func getServerURL() (serverUrl string) {
-	serverUrl = os.Getenv("SERVER_URL")
-	if len(serverUrl) == 0 {
-		serverUrl = defaultServerURL
-	}
-
-	return
-}
-
-func getMerkleRootFilename() (merkleRootFilename string) {
-	merkleRootFilename = os.Getenv("MERKLE_ROOT_FILENAME")
-	if len(merkleRootFilename) == 0 {
-		merkleRootFilename = defaultMerkleRootFilename
-	}
-
-	return
 }

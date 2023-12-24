@@ -30,7 +30,7 @@ func NewDownloadHandler(repository storage.Repository) func(http.ResponseWriter,
 			return
 		}
 
-		fileContent, err := repository.RetrieveFileByIndex(index)
+		fileContent, err := repository.RetrieveFileByIndex(r.Context(), index)
 		if err == storage.ErrStoredFileNotFound {
 			utils.HttpError(w, http.StatusNotFound, fmt.Errorf("{index} not found: %d", index))
 
@@ -63,7 +63,7 @@ func NewProofHandler(repository storage.Repository, hashFn merkle.HashFn) func(h
 			return
 		}
 
-		storedFiles, err := repository.RetrieveAllFiles()
+		storedFiles, err := repository.RetrieveAllFiles(r.Context())
 		if err != nil {
 			utils.HttpError(w, http.StatusInternalServerError, err)
 

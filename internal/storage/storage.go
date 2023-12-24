@@ -1,6 +1,9 @@
 package storage
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
 
 var (
 	ErrStoredFileNotFound = errors.New("the file is not found in the storage")
@@ -13,7 +16,8 @@ type StoredFile struct {
 }
 
 type Repository interface {
-	StoreFile(file StoredFile) (int, error)
-	RetrieveAllFiles() ([]StoredFile, error)
-	RetrieveFileByIndex(i int) (StoredFile, error)
+	StoreFile(ctx context.Context, file StoredFile) (int, error)
+	RetrieveAllFiles(ctx context.Context) ([]StoredFile, error)
+	RetrieveFileByIndex(ctx context.Context, i int) (StoredFile, error)
+	DeleteAllFiles(ctx context.Context) error
 }

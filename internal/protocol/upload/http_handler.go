@@ -26,6 +26,12 @@ func NewUploadHandler(repository storage.Repository) func(http.ResponseWriter, *
 			return
 		}
 
+		if err := repository.DeleteAllFiles(r.Context()); err != nil {
+			utils.HttpError(w, http.StatusInternalServerError, fmt.Errorf("error while resetting storage: %s", err))
+
+			return
+		}
+
 		var uploadedFiles []protocol.UploadedFile
 
 		files := r.MultipartForm.File["files"]
@@ -45,7 +51,7 @@ func NewUploadHandler(repository storage.Repository) func(http.ResponseWriter, *
 				return
 			}
 
-			i, err := repository.StoreFile(storage.StoredFile{
+			i, err := repository.StoreFile(r.Context(), storage.StoredFile{
 				Name:    fileHeader.Filename,
 				Content: data,
 			})

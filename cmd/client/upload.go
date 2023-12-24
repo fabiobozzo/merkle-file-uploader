@@ -38,7 +38,8 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, getServerURL(), hashFn)
+		serverURL := utils.EnvStr("SERVER_URL", defaultServerURL)
+		uploader := upload.NewHttpUploader(&http.Client{Timeout: time.Second * 30}, serverURL, hashFn)
 		uploadedFiles, merkleRoot, err := uploader.UploadFilesFrom(filePaths)
 		if err != nil {
 			fmt.Println(err)
@@ -50,7 +51,8 @@ var uploadCmd = &cobra.Command{
 			fmt.Printf("Uploaded file at index #%d: %s\n", f.Index, f.Name)
 		}
 
-		if err = os.WriteFile(getMerkleRootFilename(), []byte(merkleRoot), 0644); err != nil {
+		merkleRootFilename := utils.EnvStr("MERKLE_ROOT_FILENAME", defaultMerkleRootFilename)
+		if err = os.WriteFile(merkleRootFilename, []byte(merkleRoot), 0644); err != nil {
 			fmt.Printf("Failed to store merkle root: %s\n", err)
 
 			return

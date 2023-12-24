@@ -1,6 +1,9 @@
 package storage
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 type InMemoryStorage struct {
 	mu    sync.RWMutex
@@ -8,7 +11,13 @@ type InMemoryStorage struct {
 	files map[int]StoredFile
 }
 
-func (s *InMemoryStorage) StoreFile(file StoredFile) (int, error) {
+func NewInMemoryStorage() *InMemoryStorage {
+	return &InMemoryStorage{
+		files: make(map[int]StoredFile),
+	}
+}
+
+func (s *InMemoryStorage) StoreFile(_ context.Context, file StoredFile) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -19,7 +28,7 @@ func (s *InMemoryStorage) StoreFile(file StoredFile) (int, error) {
 	return s.seq, nil
 }
 
-func (s *InMemoryStorage) RetrieveAllFiles() (storedFiles []StoredFile, err error) {
+func (s *InMemoryStorage) RetrieveAllFiles(_ context.Context) (storedFiles []StoredFile, err error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -30,7 +39,7 @@ func (s *InMemoryStorage) RetrieveAllFiles() (storedFiles []StoredFile, err erro
 	return
 }
 
-func (s *InMemoryStorage) RetrieveFileByIndex(i int) (storedFile StoredFile, err error) {
+func (s *InMemoryStorage) RetrieveFileByIndex(_ context.Context, i int) (storedFile StoredFile, err error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -42,8 +51,12 @@ func (s *InMemoryStorage) RetrieveFileByIndex(i int) (storedFile StoredFile, err
 	return
 }
 
-func NewInMemoryStorage() *InMemoryStorage {
-	return &InMemoryStorage{
-		files: make(map[int]StoredFile),
-	}
+func (s *InMemoryStorage) DeleteAllFiles(_ context.Context) (err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.seq = 0
+	s.files = make(map[int]StoredFile)
+
+	return nil
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"merkle-file-uploader/client"
-	"merkle-file-uploader/server"
+	"merkle-file-uploader/cmd/client"
+	"merkle-file-uploader/cmd/server"
 )
 
 func main() {

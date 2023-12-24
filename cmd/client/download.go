@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"merkle-file-uploader/internal/protocol/download"
+	"merkle-file-uploader/internal/utils"
 )
 
 type Downloader interface {
@@ -35,7 +36,7 @@ var downloadCmd = &cobra.Command{
 			return
 		}
 
-		rootHash, err := os.ReadFile(getMerkleRootFilename())
+		rootHash, err := os.ReadFile(utils.EnvStr("MERKLE_ROOT_FILENAME", defaultMerkleRootFilename))
 		if err != nil {
 			fmt.Println("Merkle Root hash is missing or unreadable:", err)
 
@@ -44,7 +45,7 @@ var downloadCmd = &cobra.Command{
 
 		downloader := download.NewHttpDownloader(
 			&http.Client{Timeout: time.Second * 30},
-			getServerURL(),
+			utils.EnvStr("SERVER_URL", defaultServerURL),
 			string(rootHash),
 			hashFn,
 		)
