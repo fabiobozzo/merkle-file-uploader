@@ -52,9 +52,11 @@ func (s *S3Storage) StoreFile(ctx context.Context, file StoredFile) (i int, err 
 		return
 	}
 
+	i = filesCount + 1
+
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(fmt.Sprintf("%d", filesCount+1)),
+		Key:    aws.String(fmt.Sprintf("%d", i)),
 		Body:   bytes.NewReader(file.Content),
 	})
 
